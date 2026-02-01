@@ -33,10 +33,10 @@ entries:
         - url: https://artifacthub.io/packages/helm/prometheus-community/prometheus
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-02-01T21:49:08.621416156Z"
+    created: "2026-02-01T22:30:21.488379882Z"
     description: High-performance eBPF/XDP load balancer and traffic routing platform
       for Kubernetes
-    digest: fd56113e310b2722811b229104e41172a3e36ac8cecf0b0c7877a43e92cfa4fe
+    digest: c7206796d30e281e09285b1861105c0fca4120e414a7b38df12aeb5adc805449
     home: https://edgenexus.io/jetpath
     icon: https://edgenexus.io/images/jetpath-logo.png
     keywords:
@@ -59,4 +59,4 @@ entries:
     urls:
     - https://edgenexus.github.io/Jetpath_Public/jetpath-1.0.0.tgz
     version: 1.0.0
-generated: "2026-02-01T21:49:08.620635503Z"
+generated: "2026-02-01T22:30:21.487079161Z"
