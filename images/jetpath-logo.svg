@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#326CE5"/>
+      <stop offset="100%" style="stop-color:#1A4B9C"/>
+    </linearGradient>
+    <linearGradient id="pathGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#A8D4FF"/>
+    </linearGradient>
+  </defs>
+  <!-- Hexagon background (Kubernetes-style) -->
+  <polygon points="128,8 232,68 232,188 128,248 24,188 24,68" fill="url(#bgGrad)" stroke="#1A4B9C" stroke-width="4"/>
+  <!-- Inner hexagon border -->
+  <polygon points="128,28 212,78 212,178 128,228 44,178 44,78" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.3"/>
+  <!-- Jet/Arrow path symbol -->
+  <g transform="translate(128,128)">
+    <!-- Central hub (like Kubernetes wheel hub) -->
+    <circle cx="0" cy="0" r="20" fill="#FFFFFF"/>
+    <circle cx="0" cy="0" r="14" fill="url(#bgGrad)"/>
+    <!-- Jet trails / paths radiating outward -->
+    <g stroke="url(#pathGrad)" stroke-width="8" stroke-linecap="round" fill="none">
+      <!-- Top path -->
+      <path d="M0,-30 L0,-70" opacity="0.9"/>
+      <!-- Top-right path -->
+      <path d="M26,-15 L60.6,-35" opacity="0.9"/>
+      <!-- Bottom-right path -->
+      <path d="M26,15 L60.6,35" opacity="0.9"/>
+      <!-- Bottom path -->
+      <path d="M0,30 L0,70" opacity="0.9"/>
+      <!-- Bottom-left path -->
+      <path d="M-26,15 L-60.6,35" opacity="0.9"/>
+      <!-- Top-left path -->
+      <path d="M-26,-15 L-60.6,-35" opacity="0.9"/>
+    </g>
+    <!-- Arrow heads at end of paths -->
+    <g fill="#FFFFFF">
+      <polygon points="0,-75 -8,-60 8,-60" transform="rotate(0)"/>
+      <polygon points="0,-75 -8,-60 8,-60" transform="rotate(60)"/>
+      <polygon points="0,-75 -8,-60 8,-60" transform="rotate(120)"/>
+      <polygon points="0,-75 -8,-60 8,-60" transform="rotate(180)"/>
+      <polygon points="0,-75 -8,-60 8,-60" transform="rotate(240)"/>
+      <polygon points="0,-75 -8,-60 8,-60" transform="rotate(300)"/>
+    </g>
+    <!-- Small connection nodes -->
+    <g fill="#FFFFFF">
+      <circle cx="0" cy="-50" r="6"/>
+      <circle cx="43.3" cy="-25" r="6"/>
+      <circle cx="43.3" cy="25" r="6"/>
+      <circle cx="0" cy="50" r="6"/>
+      <circle cx="-43.3" cy="25" r="6"/>
+      <circle cx="-43.3" cy="-25" r="6"/>
+    </g>
+  </g>
+</svg>
+

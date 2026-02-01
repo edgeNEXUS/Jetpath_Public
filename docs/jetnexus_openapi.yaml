@@ -1,0 +1,1288 @@
+openapi: 3.0.0
+info:
+  title: Jetpath Control API
+  version: 1.0.0
+  description: |
+    # Jetpath - Ultra-Fast Load Balancing at Wire Speed
+
+    **Jetpath** is a next-generation load balancer that processes traffic directly in the Linux kernel,
+    delivering **10x faster performance** than traditional solutions like NGINX or HAProxy.
+    With sub-microsecond latency and millions of packets per second throughput, Jetpath is built
+    for modern cloud-native infrastructure.
+
+    ## Why Jetpath?
+
+    - ⚡ **Blazing Fast** - Kernel-level packet processing at line rate (10M+ pps)
+    - 🌍 **Layer 7 Intelligence** - HTTP host and path routing, SNI-based TLS routing
+    - 🛡️ **Built-in DDoS Protection** - Rate limiting, SYN flood protection, IP blacklisting
+    - 🌐 **Full IPv4/IPv6 Support** - Dual-stack networking out of the box
+    - ☸️ **Kubernetes Native** - Automatic Service/Endpoint synchronization
+    - 🔄 **Smart Load Balancing** - Round robin, weighted, least connections, session persistence
+    - 🚀 **Zero-Copy Forwarding** - Direct Server Return (DSR) for maximum efficiency
+
+    ## Key Features
+
+    | Feature | Description |
+    |---------|-------------|
+    | **L4 Load Balancing** | TCP/UDP with multiple algorithms |
+    | **L7 Routing** | HTTP host and path-based routing |
+    | **DDoS Protection** | Rate limiting, SYN protection, IP filtering |
+    | **Session Persistence** | Source IP and cookie-based affinity |
+    | **Health Monitoring** | Real-time metrics and traffic analysis |
+
+    ## Kubernetes Integration
+
+    Deploy Jetpath as a DaemonSet and configure services using annotations:
+
+    | Annotation | Description | Default |
+    |------------|-------------|---------|
+    | `jetpath.io/enabled` | Enable Jetpath for this service | `false` |
+    | `jetpath.io/lb-policy` | Load balancing policy | `round_robin` |
+    | `jetpath.io/persistence` | Session persistence (`source`, `cookie`) | - |
+    | `jetpath.io/forwarding-mode` | Forwarding mode (`proxy`, `dsr`) | `proxy` |
+
+    ## Getting Started
+
+    ```bash
+    # Docker
+    docker run -d --privileged --network host edgenexus/jetpath
+
+    # Kubernetes
+    helm install jetpath jetpath/jetpath --namespace jetpath-system
+    ```
+servers:
+  - url: /v1
+tags:
+  - name: system
+  - name: config
+  - name: instances
+  - name: services
+  - name: routes
+  - name: drop-list
+  - name: ddos
+    description: DDoS protection configuration (rate limiting, SYN protection, HTTP method filtering, TLS policy)
+  - name: metrics
+paths:
+  /health:
+    get:
+      tags: [system]
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+              examples:
+                ok:
+                  value: { status: "ok" }
+  /status:
+    get:
+      tags: [system]
+      summary: Runtime status
+      responses:
+        "200":
+          description: Status payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  config_version: { type: integer }
+                  instance_count: { type: integer }
+                  updated_at: { type: string, format: date-time }
+                  bpf_enabled: { type: boolean }
+                  xdp_dir: { type: string }
+                  pin_root: { type: string }
+  /schema:
+    get:
+      tags: [config]
+      summary: JSON schema for Jetpath config
+      responses:
+        "200":
+          description: JSON schema
+          content:
+            application/json:
+              schema:
+                type: object
+  /config:
+    get:
+      tags: [config]
+      summary: Get full config
+      responses:
+        "200":
+          description: Jetpath config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JetnexusConfig"
+    put:
+      tags: [config]
+      summary: Replace full config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JetnexusConfig"
+      responses:
+        "200":
+          description: Updated config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JetnexusConfig"
+  /instances:
+    get:
+      tags: [instances]
+      summary: List instances
+      responses:
+        "200":
+          description: Instance list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Instance"
+    post:
+      tags: [instances]
+      summary: Create instance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstanceCreate"
+      responses:
+        "201":
+          description: Created instance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+  /instances/{instance_id}:
+    get:
+      tags: [instances]
+      summary: Get instance
+      parameters:
+        - $ref: "#/components/parameters/InstanceId"
+      responses:
+        "200":
+          description: Instance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+    patch:
+      tags: [instances]
+      summary: Update instance
+      parameters:
+        - $ref: "#/components/parameters/InstanceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstancePatch"
+      responses:
+        "200":
+          description: Updated instance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+    delete:
+      tags: [instances]
+      summary: Delete instance
+      parameters:
+        - $ref: "#/components/parameters/InstanceId"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /services:
+    get:
+      tags: [services]
+      summary: List services in an instance
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      responses:
+        "200":
+          description: Service list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+    post:
+      tags: [services]
+      summary: Create service
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceCreate"
+            examples:
+              http_service:
+                summary: HTTP service with IPv4
+                value:
+                  name: "web"
+                  protocol: "tcp"
+                  service_type: "http"
+                  listeners:
+                    - vip: "203.0.113.10"
+                      port: 80
+                  lb_source_ip: "interface"
+                  forwarding_mode: "proxy"
+                  lb_policy: { type: "round_robin" }
+                  persistence:
+                    enabled: true
+                    type: "source"
+                    timeout_sec: 3600
+                  destinations:
+                    - id: "web-1"
+                      ip: "10.0.0.10"
+                      port: 80
+              ipv6_service:
+                summary: HTTPS service with IPv6 (dual-stack)
+                value:
+                  name: "web-ipv6"
+                  protocol: "tcp"
+                  service_type: "https"
+                  listeners:
+                    - vip: "2001:db8::1"
+                      port: 443
+                  lb_source_ip: "vip"
+                  forwarding_mode: "proxy"
+                  lb_policy: { type: "least_connection" }
+                  destinations:
+                    - id: "backend-1"
+                      ip: "2001:db8::10"
+                      port: 8443
+                    - id: "backend-2"
+                      ip: "2001:db8::11"
+                      port: 8443
+              k8s_synced_service:
+                summary: Service synced from Kubernetes
+                value:
+                  id: "k8s-default-nginx-80"
+                  name: "nginx"
+                  protocol: "tcp"
+                  service_type: "http"
+                  listeners:
+                    - vip: "10.96.0.100"
+                      port: 80
+                  lb_source_ip: "interface"
+                  forwarding_mode: "proxy"
+                  lb_policy: { type: "round_robin" }
+                  destinations:
+                    - id: "pod-abc123"
+                      ip: "10.244.0.5"
+                      port: 80
+                    - id: "pod-def456"
+                      ip: "10.244.1.8"
+                      port: 80
+      responses:
+        "201":
+          description: Created service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+  /services/{service_id}:
+    get:
+      tags: [services]
+      summary: Get service
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    patch:
+      tags: [services]
+      summary: Update service
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/ServiceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServicePatch"
+      responses:
+        "200":
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    delete:
+      tags: [services]
+      summary: Delete service
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /services/{service_id}/destinations:
+    get:
+      tags: [services]
+      summary: List destinations for a service
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Destination list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Destination"
+    post:
+      tags: [services]
+      summary: Create destination
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/ServiceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DestinationCreate"
+      responses:
+        "201":
+          description: Created destination
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Destination"
+  /services/{service_id}/destinations/{destination_id}:
+    patch:
+      tags: [services]
+      summary: Update destination
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/ServiceId"
+        - $ref: "#/components/parameters/DestinationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DestinationPatch"
+      responses:
+        "200":
+          description: Updated destination
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Destination"
+    delete:
+      tags: [services]
+      summary: Delete destination
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/ServiceId"
+        - $ref: "#/components/parameters/DestinationId"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /routes:
+    get:
+      tags: [routes]
+      summary: List routes
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      responses:
+        "200":
+          description: Route list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Route"
+    post:
+      tags: [routes]
+      summary: Create route
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RouteCreate"
+            examples:
+              host_route:
+                value:
+                  name: "route-api"
+                  priority: 100
+                  match:
+                    host: "api.example.com"
+                    host_match: "exact"
+                  action:
+                    service_id: "svc-web"
+      responses:
+        "201":
+          description: Created route
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Route"
+  /routes/{route_id}:
+    patch:
+      tags: [routes]
+      summary: Update route
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/RouteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoutePatch"
+      responses:
+        "200":
+          description: Updated route
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Route"
+    delete:
+      tags: [routes]
+      summary: Delete route
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/RouteId"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /drop-list:
+    get:
+      tags: [drop-list]
+      summary: List drop entries
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      responses:
+        "200":
+          description: Drop list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DropEntry"
+    post:
+      tags: [drop-list]
+      summary: Add drop entry
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DropEntryCreate"
+            examples:
+              block_ip:
+                value:
+                  ip: "198.51.100.5"
+                  reason: "abuse"
+      responses:
+        "201":
+          description: Created drop entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DropEntry"
+  /drop-list/{entry_id}:
+    patch:
+      tags: [drop-list]
+      summary: Update drop entry
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/DropEntryId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DropEntryPatch"
+      responses:
+        "200":
+          description: Updated drop entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DropEntry"
+    delete:
+      tags: [drop-list]
+      summary: Delete drop entry
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/DropEntryId"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /ddos:
+    get:
+      tags: [ddos]
+      summary: Get DDoS protection config
+      description: Get the current DDoS protection configuration for an instance.
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      responses:
+        "200":
+          description: DDoS configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DdosConfig"
+    put:
+      tags: [ddos]
+      summary: Update DDoS protection config
+      description: Replace the entire DDoS protection configuration for an instance.
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DdosConfig"
+      responses:
+        "200":
+          description: Updated DDoS configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DdosConfig"
+  /ddos/rate-limit:
+    put:
+      tags: [ddos]
+      summary: Update rate limit config
+      description: Configure rate limiting settings (packets per second, burst size).
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RateLimitConfig"
+      responses:
+        "200":
+          description: Updated rate limit configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitConfig"
+  /ddos/syn-protection:
+    put:
+      tags: [ddos]
+      summary: Update SYN protection config
+      description: Enable or disable SYN flood protection.
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SynProtectionConfig"
+      responses:
+        "200":
+          description: Updated SYN protection configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SynProtectionConfig"
+  /ddos/http-method-policies:
+    get:
+      tags: [ddos]
+      summary: List HTTP method policies
+      description: Get all HTTP method filtering policies.
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      responses:
+        "200":
+          description: List of HTTP method policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HttpMethodPolicy"
+    put:
+      tags: [ddos]
+      summary: Update HTTP method policies
+      description: Replace all HTTP method filtering policies.
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/HttpMethodPolicy"
+      responses:
+        "200":
+          description: Updated HTTP method policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HttpMethodPolicy"
+  /ddos/tls-policy:
+    put:
+      tags: [ddos]
+      summary: Update TLS policy
+      description: Configure TLS version policy (minimum version enforcement).
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TlsPolicy"
+      responses:
+        "200":
+          description: Updated TLS policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TlsPolicy"
+  /ddos/traffic-ladder:
+    put:
+      tags: [ddos]
+      summary: Update traffic ladder
+      description: Configure packet size ladder thresholds for traffic analysis.
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrafficLadder"
+      responses:
+        "200":
+          description: Updated traffic ladder configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrafficLadder"
+  /metrics:
+    get:
+      tags: [metrics]
+      summary: Instance metrics
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdOptionalQuery"
+      responses:
+        "200":
+          description: Metrics payload
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/InstanceMetrics"
+                  - type: array
+                    items:
+                      $ref: "#/components/schemas/InstanceMetrics"
+  /metrics/services/{service_id}:
+    get:
+      tags: [metrics]
+      summary: Service metrics
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/ServiceId"
+      responses:
+        "200":
+          description: Service metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceMetrics"
+  /metrics/destinations/{destination_id}:
+    get:
+      tags: [metrics]
+      summary: Destination metrics
+      parameters:
+        - $ref: "#/components/parameters/InstanceIdQuery"
+        - $ref: "#/components/parameters/DestinationId"
+      responses:
+        "200":
+          description: Destination metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DestinationMetrics"
+components:
+  parameters:
+    InstanceId:
+      name: instance_id
+      in: path
+      required: true
+      schema: { type: string }
+    InstanceIdQuery:
+      name: instance_id
+      in: query
+      required: true
+      schema: { type: string }
+    InstanceIdOptionalQuery:
+      name: instance_id
+      in: query
+      required: false
+      schema: { type: string }
+    ServiceId:
+      name: service_id
+      in: path
+      required: true
+      schema: { type: string }
+    RouteId:
+      name: route_id
+      in: path
+      required: true
+      schema: { type: string }
+    DestinationId:
+      name: destination_id
+      in: path
+      required: true
+      schema: { type: string }
+    DropEntryId:
+      name: entry_id
+      in: path
+      required: true
+      schema: { type: string }
+  schemas:
+    Defaults:
+      type: object
+      properties:
+        persistence_timeout_sec: { type: integer, minimum: 1 }
+        metrics_interval_sec: { type: integer, minimum: 1 }
+      additionalProperties: false
+    IpRange:
+      type: object
+      properties:
+        start: { type: string }
+        end: { type: string }
+      required: [start, end]
+      additionalProperties: false
+    PortRange:
+      type: object
+      properties:
+        start: { type: integer, minimum: 1, maximum: 65535 }
+        end: { type: integer, minimum: 1, maximum: 65535 }
+      required: [start, end]
+      additionalProperties: false
+    Listener:
+      type: object
+      description: |
+        Listener configuration with VIP (IPv4 or IPv6) and port.
+        Examples:
+        - IPv4: `{"vip": "203.0.113.10", "port": 80}`
+        - IPv6: `{"vip": "2001:db8::1", "port": 443}`
+        - Range: `{"vip_range": {"start": "10.0.0.1", "end": "10.0.0.10"}, "port_range": {"start": 8000, "end": 8010}}`
+      properties:
+        vip:
+          type: string
+          description: Virtual IP address (IPv4 or IPv6)
+          example: "2001:db8::1"
+        vip_range: { $ref: "#/components/schemas/IpRange" }
+        port: { type: integer, minimum: 1, maximum: 65535, example: 443 }
+        port_range: { $ref: "#/components/schemas/PortRange" }
+      additionalProperties: false
+    LoadBalancingPolicy:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [round_robin, weighted_round_robin, source_persistent, cookie_persistent, least_connection, host]
+        source_key:
+          type: string
+          enum: [src_ip, src_ip_port]
+        cookie_name: { type: string }
+        host_map:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+      additionalProperties: false
+    PersistenceConfig:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        type: { type: string, enum: [source, cookie] }
+        timeout_sec: { type: integer, minimum: 1 }
+        shared_table_ref: { type: string }
+        source_key: { type: string, enum: [src_ip, src_ip_port] }
+        cookie_name: { type: string }
+      additionalProperties: false
+    Destination:
+      type: object
+      description: Backend server destination (supports IPv4 and IPv6)
+      properties:
+        id: { type: string }
+        ip:
+          type: string
+          description: Backend server IP address (IPv4 or IPv6)
+          example: "2001:db8::10"
+        port: { type: integer, minimum: 1, maximum: 65535, example: 8080 }
+        weight: { type: integer, minimum: 1, default: 1 }
+        status: { type: string, enum: [online, offline], default: online }
+      required: [id, ip, port]
+      additionalProperties: false
+    DestinationCreate:
+      type: object
+      description: Create a new destination (supports IPv4 and IPv6)
+      properties:
+        id: { type: string }
+        ip:
+          type: string
+          description: Backend server IP address (IPv4 or IPv6)
+          example: "10.0.0.10"
+        port: { type: integer, minimum: 1, maximum: 65535 }
+        weight: { type: integer, minimum: 1 }
+        status: { type: string, enum: [online, offline] }
+      required: [ip, port]
+      additionalProperties: false
+    DestinationPatch:
+      type: object
+      properties:
+        ip: { type: string }
+        port: { type: integer, minimum: 1, maximum: 65535 }
+        weight: { type: integer, minimum: 1 }
+        status: { type: string, enum: [online, offline] }
+      additionalProperties: false
+    HttpConfig:
+      type: object
+      properties:
+        verbs:
+          type: array
+          items: { type: string }
+        host_policy:
+          type: array
+          items: { type: string }
+        host_match:
+          type: string
+          enum: [exact, wildcard]
+        max_header_bytes:
+          type: integer
+          minimum: 64
+          maximum: 512
+        fallback:
+          type: string
+          enum: [drop, default_service]
+        routes:
+          type: array
+          items: { $ref: "#/components/schemas/HttpRoute" }
+      additionalProperties: false
+    HttpRoute:
+      type: object
+      properties:
+        path: { type: string }
+        destination_id: { type: string }
+        host: { type: string }
+      required: [path, destination_id]
+      additionalProperties: false
+    Service:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        protocol: { type: string, enum: [tcp, udp, tcp_udp] }
+        service_type: { type: string, enum: [layer4, http, https, dns, custom] }
+        listeners:
+          type: array
+          items: { $ref: "#/components/schemas/Listener" }
+        lb_source_ip: { type: string, enum: [interface, vip, client] }
+        forwarding_mode: { type: string, enum: [proxy, dsr, gateway] }
+        lb_policy: { $ref: "#/components/schemas/LoadBalancingPolicy" }
+        persistence: { $ref: "#/components/schemas/PersistenceConfig" }
+        destinations:
+          type: array
+          items: { $ref: "#/components/schemas/Destination" }
+        http: { $ref: "#/components/schemas/HttpConfig" }
+      required: [id, name, protocol, listeners]
+      additionalProperties: false
+    ServiceCreate:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        protocol: { type: string, enum: [tcp, udp, tcp_udp] }
+        service_type: { type: string, enum: [layer4, http, https, dns, custom] }
+        listeners:
+          type: array
+          items: { $ref: "#/components/schemas/Listener" }
+        lb_source_ip: { type: string, enum: [interface, vip, client] }
+        forwarding_mode: { type: string, enum: [proxy, dsr, gateway] }
+        lb_policy: { $ref: "#/components/schemas/LoadBalancingPolicy" }
+        persistence: { $ref: "#/components/schemas/PersistenceConfig" }
+        destinations:
+          type: array
+          items: { $ref: "#/components/schemas/Destination" }
+        http: { $ref: "#/components/schemas/HttpConfig" }
+      required: [name, protocol, listeners]
+      additionalProperties: false
+    ServicePatch:
+      type: object
+      properties:
+        name: { type: string }
+        protocol: { type: string, enum: [tcp, udp, tcp_udp] }
+        service_type: { type: string, enum: [layer4, http, https, dns, custom] }
+        listeners:
+          type: array
+          items: { $ref: "#/components/schemas/Listener" }
+        lb_source_ip: { type: string, enum: [interface, vip, client] }
+        forwarding_mode: { type: string, enum: [proxy, dsr, gateway] }
+        lb_policy: { $ref: "#/components/schemas/LoadBalancingPolicy" }
+        persistence: { $ref: "#/components/schemas/PersistenceConfig" }
+        destinations:
+          type: array
+          items: { $ref: "#/components/schemas/Destination" }
+        http: { $ref: "#/components/schemas/HttpConfig" }
+      additionalProperties: false
+    RouteMatch:
+      type: object
+      properties:
+        src_ip: { type: string }
+        src_ip_range: { $ref: "#/components/schemas/IpRange" }
+        dst_ip: { type: string }
+        host: { type: string }
+        host_match: { type: string, enum: [exact, wildcard] }
+        verb:
+          type: array
+          items: { type: string }
+      additionalProperties: false
+    RouteAction:
+      type: object
+      properties:
+        service_id: { type: string }
+        destination_id: { type: string }
+      additionalProperties: false
+    Route:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        priority: { type: integer }
+        match: { $ref: "#/components/schemas/RouteMatch" }
+        action: { $ref: "#/components/schemas/RouteAction" }
+      required: [id, name, match, action]
+      additionalProperties: false
+    RouteCreate:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        priority: { type: integer }
+        match: { $ref: "#/components/schemas/RouteMatch" }
+        action: { $ref: "#/components/schemas/RouteAction" }
+      required: [name, match, action]
+      additionalProperties: false
+    RoutePatch:
+      type: object
+      properties:
+        name: { type: string }
+        priority: { type: integer }
+        match: { $ref: "#/components/schemas/RouteMatch" }
+        action: { $ref: "#/components/schemas/RouteAction" }
+      additionalProperties: false
+    DropEntry:
+      type: object
+      properties:
+        id: { type: string }
+        ip: { type: string }
+        ip_range: { $ref: "#/components/schemas/IpRange" }
+        reason: { type: string }
+      additionalProperties: false
+    DropEntryCreate:
+      type: object
+      properties:
+        id: { type: string }
+        ip: { type: string }
+        ip_range: { $ref: "#/components/schemas/IpRange" }
+        reason: { type: string }
+      additionalProperties: false
+    DropEntryPatch:
+      type: object
+      properties:
+        reason: { type: string }
+      additionalProperties: false
+    MetricsConfig:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        interval_sec: { type: integer, minimum: 1 }
+      additionalProperties: false
+    LoggingConfig:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        event_log_path: { type: string }
+        rate_limit_per_sec: { type: integer, minimum: 1 }
+        debug_level:
+          type: string
+          enum: [off, error, decision, verbose]
+        sample_rate:
+          type: integer
+          minimum: 1
+          maximum: 1000
+      additionalProperties: false
+    Instance:
+      type: object
+      properties:
+        id: { type: string }
+        interface: { type: string }
+        modes:
+          type: array
+          items:
+            type: string
+            enum: [load_balancing, routing, analyse, defend]
+        services:
+          type: array
+          items: { $ref: "#/components/schemas/Service" }
+        routes:
+          type: array
+          items: { $ref: "#/components/schemas/Route" }
+        drop_list:
+          type: array
+          items: { $ref: "#/components/schemas/DropEntry" }
+        metrics: { $ref: "#/components/schemas/MetricsConfig" }
+        logging: { $ref: "#/components/schemas/LoggingConfig" }
+      required: [id, interface]
+      additionalProperties: false
+    InstanceCreate:
+      type: object
+      properties:
+        id: { type: string }
+        interface: { type: string }
+        modes:
+          type: array
+          items:
+            type: string
+            enum: [load_balancing, routing, analyse, defend]
+        services:
+          type: array
+          items: { $ref: "#/components/schemas/Service" }
+        routes:
+          type: array
+          items: { $ref: "#/components/schemas/Route" }
+        drop_list:
+          type: array
+          items: { $ref: "#/components/schemas/DropEntry" }
+        metrics: { $ref: "#/components/schemas/MetricsConfig" }
+        logging: { $ref: "#/components/schemas/LoggingConfig" }
+      required: [interface]
+      additionalProperties: false
+    InstancePatch:
+      type: object
+      properties:
+        interface: { type: string }
+        modes:
+          type: array
+          items:
+            type: string
+            enum: [load_balancing, routing, analyse, defend]
+        services:
+          type: array
+          items: { $ref: "#/components/schemas/Service" }
+        routes:
+          type: array
+          items: { $ref: "#/components/schemas/Route" }
+        drop_list:
+          type: array
+          items: { $ref: "#/components/schemas/DropEntry" }
+        metrics: { $ref: "#/components/schemas/MetricsConfig" }
+        logging: { $ref: "#/components/schemas/LoggingConfig" }
+      additionalProperties: false
+    JetnexusConfig:
+      type: object
+      properties:
+        version: { type: string }
+        defaults: { $ref: "#/components/schemas/Defaults" }
+        instances:
+          type: array
+          items: { $ref: "#/components/schemas/Instance" }
+      additionalProperties: false
+    ServiceMetrics:
+      type: object
+      properties:
+        service_id: { type: string }
+        counters:
+          type: object
+    DestinationMetrics:
+      type: object
+      properties:
+        destination_id: { type: string }
+        counters:
+          type: object
+    InstanceMetrics:
+      type: object
+      properties:
+        instance_id: { type: string }
+        counters: { type: object }
+        services:
+          type: array
+          items: { $ref: "#/components/schemas/ServiceMetrics" }
+        destinations:
+          type: array
+          items: { $ref: "#/components/schemas/DestinationMetrics" }
+        drops_per_ip:
+          type: object
+          additionalProperties: { type: integer }
+        bpf_counters:
+          type: object
+    RateLimitConfig:
+      type: object
+      description: Rate limiting configuration using token bucket algorithm.
+      properties:
+        enabled:
+          type: boolean
+          default: true
+          description: Whether rate limiting is enabled
+        pps:
+          type: integer
+          minimum: 100
+          maximum: 10000000
+          default: 10000
+          description: Packets per second limit
+        burst:
+          type: integer
+          minimum: 100
+          maximum: 10000000
+          default: 20000
+          description: Burst size (max tokens)
+      additionalProperties: false
+    SynProtectionConfig:
+      type: object
+      description: SYN flood protection configuration.
+      properties:
+        enabled:
+          type: boolean
+          default: false
+          description: Whether SYN protection is enabled
+      additionalProperties: false
+    HttpMethodPolicy:
+      type: object
+      description: HTTP method filtering policy.
+      properties:
+        method:
+          type: string
+          enum: [GET, POST, HEAD, PUT, DELETE, PATCH, OPTIONS, TRACE, CONNECT]
+          description: HTTP method to apply policy to
+        action:
+          type: string
+          enum: [allow, block, rate_limit]
+          default: allow
+          description: Action to take for this method
+        rate_limit_pps:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: Rate limit in packets per second (required when action is rate_limit)
+      required: [method]
+      additionalProperties: false
+    TlsPolicy:
+      type: object
+      description: TLS version policy configuration.
+      properties:
+        min_version:
+          type: string
+          enum: ["1.0", "1.1", "1.2", "1.3"]
+          default: "1.2"
+          description: Minimum TLS version to allow
+        enforce:
+          type: boolean
+          default: false
+          description: Whether to enforce TLS version policy
+      additionalProperties: false
+    TrafficLadder:
+      type: object
+      description: Packet size ladder for traffic analysis.
+      properties:
+        enabled:
+          type: boolean
+          default: false
+          description: Whether traffic ladder is enabled
+        thresholds:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          maxItems: 8
+          default: [64, 128, 256, 512, 1024, 1500, 4096, 9000]
+          description: Packet size thresholds in bytes (max 8 values, ascending order)
+      additionalProperties: false
+    DdosConfig:
+      type: object
+      description: DDoS protection configuration.
+      properties:
+        rate_limit:
+          $ref: "#/components/schemas/RateLimitConfig"
+        syn_protection:
+          $ref: "#/components/schemas/SynProtectionConfig"
+        http_method_policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/HttpMethodPolicy"
+        tls_policy:
+          $ref: "#/components/schemas/TlsPolicy"
+        traffic_ladder:
+          $ref: "#/components/schemas/TrafficLadder"
+      additionalProperties: false
