@@ -1,0 +1,147 @@
+# Jetpath Helm Chart Values
+# High-performance eBPF/XDP load balancer for Kubernetes
+
+# -- Number of replicas (DaemonSet ignores this)
+replicaCount: 1
+
+# -- Deployment mode: "deployment" or "daemonset"
+# DaemonSet is recommended for production to run on all nodes
+deploymentMode: daemonset
+
+image:
+  # -- Container image repository
+  repository: edgenexus/jetpath
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag (default is chart appVersion)
+  tag: ""
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Override the name of the chart
+nameOverride: ""
+# -- Override the full name of the chart
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Create a service account
+  create: true
+  # -- Annotations for the service account
+  annotations: {}
+  # -- Name of the service account (auto-generated if empty)
+  name: ""
+
+# -- Pod annotations
+podAnnotations: {}
+
+# -- Pod security context
+podSecurityContext: {}
+
+# -- Container security context (privileged required for eBPF)
+securityContext:
+  privileged: true
+  capabilities:
+    add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - BPF
+
+# API service configuration
+service:
+  # -- Service type for the control API
+  type: ClusterIP
+  # -- API port
+  port: 8080
+  # -- Node port (if type is NodePort)
+  nodePort: ""
+
+# Jetpath configuration
+config:
+  # -- Enable BPF/XDP data plane
+  bpfEnabled: true
+  # -- Network interface to attach XDP program
+  interface: "eth0"
+  # -- BPF pin root directory
+  pinRoot: "/sys/fs/bpf/jetnexus"
+  # -- Log level: debug, info, warning, error
+  logLevel: "info"
+
+# Kubernetes controller configuration
+controller:
+  # -- Enable Kubernetes Service/Endpoint controller
+  enabled: true
+  # -- Namespace to watch (empty = all namespaces)
+  namespace: ""
+  # -- Label selector to filter services
+  labelSelector: ""
+  # -- Default JetPath instance ID
+  defaultInstance: "inst-k8s"
+
+# -- Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# -- Node selector
+nodeSelector: {}
+
+# -- Tolerations for pod scheduling
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+# -- Affinity rules
+affinity: {}
+
+# Metrics and monitoring
+metrics:
+  # -- Enable Prometheus metrics endpoint
+  enabled: true
+  # -- Metrics port
+  port: 9090
+  serviceMonitor:
+    # -- Create ServiceMonitor for Prometheus Operator
+    enabled: false
+    # -- Additional labels for ServiceMonitor
+    labels: {}
+    # -- Scrape interval
+    interval: 30s
+
+# RBAC configuration
+rbac:
+  # -- Create RBAC resources
+  create: true
+
+# -- Extra environment variables
+extraEnv: []
+
+# -- Extra volume mounts
+extraVolumeMounts: []
+
+# -- Extra volumes
+extraVolumes: []
+
+# Health probes
+livenessProbe:
+  httpGet:
+    path: /v1/health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /v1/health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+

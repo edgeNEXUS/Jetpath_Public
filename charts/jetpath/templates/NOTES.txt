@@ -1,0 +1,52 @@
+🚀 Jetpath has been deployed!
+
+{{- if eq .Values.deploymentMode "daemonset" }}
+Jetpath is running as a DaemonSet on all nodes.
+{{- else }}
+Jetpath is running as a Deployment with {{ .Values.replicaCount }} replica(s).
+{{- end }}
+
+📡 Access the Jetpath API:
+
+{{- if eq .Values.service.type "NodePort" }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "jetpath.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "API URL: http://$NODE_IP:$NODE_PORT"
+{{- else if eq .Values.service.type "LoadBalancer" }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  kubectl get --namespace {{ .Release.Namespace }} svc {{ include "jetpath.fullname" . }} -w
+{{- else }}
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "jetpath.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+  echo "API URL: http://localhost:{{ .Values.service.port }}"
+{{- end }}
+
+🔍 Check health:
+  curl http://localhost:{{ .Values.service.port }}/v1/health
+
+📊 View status:
+  curl http://localhost:{{ .Values.service.port }}/v1/status
+
+📖 Documentation:
+  - Product Website: https://edgenexus.io/jetpath
+  - User Guide: https://edgenexus.io/jetpath/docs
+  - API Reference: https://app.swaggerhub.com/apis/Edgenexus/Jetpath/1.0.0
+  - Migration from NGINX: https://edgenexus.io/jetpath/migrate-from-nginx
+
+💼 Support:
+  - Community: https://community.edgenexus.io
+  - Commercial: https://edgenexus.io/support
+
+{{- if .Values.controller.enabled }}
+
+🎮 Kubernetes Controller is ENABLED
+  - Watching namespace: {{ default "all namespaces" .Values.controller.namespace }}
+  - Label selector: {{ default "none (all services)" .Values.controller.labelSelector }}
+  - Default instance: {{ .Values.controller.defaultInstance }}
+
+  To enable Jetpath for a Service, add this annotation:
+    jetpath.io/enabled: "true"
+{{- end }}
+
+⚡ Jetpath uses eBPF/XDP for high-performance load balancing at kernel level.
+   Ensure your nodes have Linux kernel 5.10+ with BPF support.
+

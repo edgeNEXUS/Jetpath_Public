@@ -1,0 +1,62 @@
+apiVersion: v1
+entries:
+  jetpath:
+  - annotations:
+      artifacthub.io/alternativeTo: |
+        - ingress-nginx
+        - traefik
+        - haproxy-ingress
+      artifacthub.io/category: networking
+      artifacthub.io/changes: |
+        - kind: added
+          description: Initial Helm chart release
+        - kind: added
+          description: Kubernetes controller for Service/Endpoint sync
+        - kind: added
+          description: eBPF/XDP data plane with L4/L7 load balancing
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/license: Proprietary
+      artifacthub.io/links: |
+        - name: Website
+          url: https://edgenexus.io/jetpath
+        - name: Documentation
+          url: https://edgenexus.io/jetpath/docs
+        - name: Migration from NGINX Ingress
+          url: https://edgenexus.io/jetpath/migrate-from-nginx
+        - name: Support
+          url: https://edgenexus.io/support
+        - name: Community Forum
+          url: https://community.edgenexus.io
+      artifacthub.io/operator: "false"
+      artifacthub.io/prerelease: "false"
+      artifacthub.io/recommendations: |
+        - url: https://artifacthub.io/packages/helm/prometheus-community/prometheus
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-02-01T21:26:26.230241636Z"
+    description: High-performance eBPF/XDP load balancer and traffic routing platform
+      for Kubernetes
+    digest: c258f64c3f6ee36cd7a3ac1dddb45f0abf602054099de2bfaafff13d1caf46f9
+    home: https://edgenexus.io/jetpath
+    icon: https://edgenexus.io/images/jetpath-logo.png
+    keywords:
+    - load-balancer
+    - ingress
+    - ebpf
+    - xdp
+    - kubernetes
+    - networking
+    - traffic-management
+    - nginx-alternative
+    - ingress-controller
+    kubeVersion: '>=1.23.0-0'
+    maintainers:
+    - email: support@edgenexus.io
+      name: EdgeNEXUS Limited
+      url: https://edgenexus.io
+    name: jetpath
+    type: application
+    urls:
+    - https://edgenexus.github.io/Jetpath_Public/jetpath-1.0.0.tgz
+    version: 1.0.0
+generated: "2026-02-01T21:26:26.228915998Z"

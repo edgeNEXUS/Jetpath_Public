@@ -1,0 +1,54 @@
+apiVersion: v2
+name: jetpath
+description: High-performance eBPF/XDP load balancer and traffic routing platform for Kubernetes
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+kubeVersion: ">=1.23.0-0"
+home: https://edgenexus.io/jetpath
+icon: https://edgenexus.io/images/jetpath-logo.png
+maintainers:
+  - name: EdgeNEXUS Limited
+    email: support@edgenexus.io
+    url: https://edgenexus.io
+keywords:
+  - load-balancer
+  - ingress
+  - ebpf
+  - xdp
+  - kubernetes
+  - networking
+  - traffic-management
+  - nginx-alternative
+  - ingress-controller
+annotations:
+  artifacthub.io/category: networking
+  artifacthub.io/license: Proprietary
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/links: |
+    - name: Website
+      url: https://edgenexus.io/jetpath
+    - name: Documentation
+      url: https://edgenexus.io/jetpath/docs
+    - name: Migration from NGINX Ingress
+      url: https://edgenexus.io/jetpath/migrate-from-nginx
+    - name: Support
+      url: https://edgenexus.io/support
+    - name: Community Forum
+      url: https://community.edgenexus.io
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Helm chart release
+    - kind: added
+      description: Kubernetes controller for Service/Endpoint sync
+    - kind: added
+      description: eBPF/XDP data plane with L4/L7 load balancing
+  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/recommendations: |
+    - url: https://artifacthub.io/packages/helm/prometheus-community/prometheus
+  artifacthub.io/alternativeTo: |
+    - ingress-nginx
+    - traefik
+    - haproxy-ingress
+

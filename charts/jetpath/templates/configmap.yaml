@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "jetpath.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "jetpath.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {
+      "instances": [
+        {
+          "id": "{{ .Values.controller.defaultInstance }}",
+          "interface": "{{ .Values.config.interface }}",
+          "modes": ["load_balancing", "routing", "defend"],
+          "services": [],
+          "routes": [],
+          "drop_list": [],
+          "metrics": {
+            "enabled": {{ .Values.metrics.enabled }},
+            "interval_ms": 1000
+          },
+          "logging": {
+            "debug_level": "{{ .Values.config.logLevel }}",
+            "sample_rate": 100
+          }
+        }
+      ]
+    }
+

@@ -1,0 +1,10 @@
+# Artifact Hub repository metadata
+# https://artifacthub.io/docs/topics/repositories/
+repositoryID: jetpath
+owners:
+  - name: EdgeNEXUS
+    email: support@edgenexus.io
+ignore:
+  - name: "*"
+    version: "0.0.0"
+

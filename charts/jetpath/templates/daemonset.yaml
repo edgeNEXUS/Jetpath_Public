@@ -1,0 +1,113 @@
+{{- if eq .Values.deploymentMode "daemonset" }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "jetpath.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "jetpath.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "jetpath.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "jetpath.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "jetpath.serviceAccountName" . }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "jetpath.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+            {{- if .Values.metrics.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: JETNEXUS_BPF_ENABLED
+              value: "{{ .Values.config.bpfEnabled }}"
+            - name: JETNEXUS_XDP_DIR
+              value: "/opt/jetpath/xdp"
+            - name: JETNEXUS_CONFIG_PATH
+              value: "/etc/jetpath/config.json"
+            - name: JETNEXUS_PIN_ROOT
+              value: "{{ .Values.config.pinRoot }}"
+            - name: JETNEXUS_HOST
+              value: "0.0.0.0"
+            - name: JETNEXUS_PORT
+              value: "{{ .Values.service.port }}"
+            - name: JETPATH_INTERFACE
+              value: "{{ .Values.config.interface }}"
+            {{- if .Values.controller.enabled }}
+            - name: JETPATH_K8S_ENABLED
+              value: "true"
+            - name: JETPATH_K8S_NAMESPACE
+              value: "{{ .Values.controller.namespace }}"
+            - name: JETPATH_K8S_LABEL_SELECTOR
+              value: "{{ .Values.controller.labelSelector }}"
+            - name: JETPATH_K8S_DEFAULT_INSTANCE
+              value: "{{ .Values.controller.defaultInstance }}"
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/jetpath
+            - name: bpf
+              mountPath: /sys/fs/bpf
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "jetpath.fullname" . }}-config
+        - name: bpf
+          hostPath:
+            path: /sys/fs/bpf
+            type: DirectoryOrCreate
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
