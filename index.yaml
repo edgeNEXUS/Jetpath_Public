@@ -18,27 +18,25 @@ entries:
       artifacthub.io/license: Proprietary
       artifacthub.io/links: |
         - name: Website
-          url: https://edgenexus.io/jetpath
+          url: https://edgenexus.github.io/Jetpath_Public
         - name: Documentation
-          url: https://edgenexus.io/jetpath/docs
-        - name: Migration from NGINX Ingress
-          url: https://edgenexus.io/jetpath/migrate-from-nginx
-        - name: Support
-          url: https://edgenexus.io/support
-        - name: Community Forum
-          url: https://community.edgenexus.io
+          url: https://edgenexus.github.io/Jetpath_Public/docs.html
+        - name: GitHub Repository
+          url: https://github.com/edgeNEXUS/Jetpath_Public
+        - name: Docker Hub
+          url: https://hub.docker.com/r/edgenexus/jetpath
       artifacthub.io/operator: "false"
       artifacthub.io/prerelease: "false"
       artifacthub.io/recommendations: |
         - url: https://artifacthub.io/packages/helm/prometheus-community/prometheus
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-02-02T00:20:52.725696254Z"
+    created: "2026-02-02T07:45:40.585598496Z"
     description: High-performance eBPF/XDP load balancer and traffic routing platform
       for Kubernetes
-    digest: a562a86a17a0f3e2880e21292aecf81cbad3625aff1e9e226bb631a6a3fc6bbc
-    home: https://edgenexus.io/jetpath
-    icon: https://edgenexus.io/images/jetpath-logo.png
+    digest: 1744162b76edb58487822f67720a45d016f38683eb781e58e8ba9483eff82fac
+    home: https://edgenexus.github.io/Jetpath_Public
+    icon: https://raw.githubusercontent.com/edgeNEXUS/Jetpath_Public/main/images/jetpath-logo.png
     keywords:
     - load-balancer
     - ingress
@@ -59,4 +57,4 @@ entries:
     urls:
     - https://edgenexus.github.io/Jetpath_Public/jetpath-1.0.0.tgz
     version: 1.0.0
-generated: "2026-02-02T00:20:52.724896728Z"
+generated: "2026-02-02T07:45:40.584814571Z"
