@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#326CE5"/>
+      <stop offset="100%" style="stop-color:#00D4AA"/>
+    </linearGradient>
+    <linearGradient id="jetGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#ffffff"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- Hexagon background -->
+  <path d="M128 20 L220 70 L220 170 L128 220 L36 170 L36 70 Z" fill="url(#bgGrad)" opacity="0.95"/>
+  <path d="M128 30 L210 75 L210 165 L128 210 L46 165 L46 75 Z" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <!-- Jet/Arrow symbol - fast forward paths -->
+  <g filter="url(#glow)">
+    <!-- Central arrow -->
+    <path d="M70 128 L160 128 L130 98 M160 128 L130 158" fill="none" stroke="url(#jetGrad)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Speed lines -->
+    <line x1="55" y1="108" x2="95" y2="108" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+    <line x1="45" y1="128" x2="65" y2="128" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+    <line x1="55" y1="148" x2="95" y2="148" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+    <!-- Network nodes -->
+    <circle cx="175" cy="90" r="8" fill="white" opacity="0.9"/>
+    <circle cx="190" cy="128" r="10" fill="white"/>
+    <circle cx="175" cy="166" r="8" fill="white" opacity="0.9"/>
+    <!-- Connection lines -->
+    <line x1="160" y1="128" x2="180" y2="128" stroke="white" stroke-width="3" opacity="0.6"/>
+    <line x1="155" y1="105" x2="170" y2="92" stroke="white" stroke-width="2" opacity="0.4"/>
+    <line x1="155" y1="151" x2="170" y2="164" stroke="white" stroke-width="2" opacity="0.4"/>
+  </g>
+</svg>
+
