@@ -864,13 +864,34 @@ components:
       additionalProperties: false
     PersistenceConfig:
       type: object
+      description: |
+        Session persistence configuration for maintaining client-to-destination affinity.
+        
+        **UDP Streaming Support**: For long-lived UDP streams (video, gaming, VoIP), use
+        `refresh_on: both` to keep sessions alive based on traffic in either direction.
       properties:
-        enabled: { type: boolean }
-        type: { type: string, enum: [source, cookie] }
-        timeout_sec: { type: integer, minimum: 1 }
-        shared_table_ref: { type: string }
-        source_key: { type: string, enum: [src_ip, src_ip_port] }
-        cookie_name: { type: string }
+        enabled: { type: boolean, description: "Enable session persistence" }
+        type: { type: string, enum: [source, cookie], description: "Persistence type - source IP or HTTP cookie" }
+        timeout_sec: { type: integer, minimum: 1, default: 3600, description: "Session timeout in seconds" }
+        refresh_on:
+          type: string
+          enum: [client, server, both]
+          default: client
+          description: |
+            When to refresh/extend the session timer:
+            - `client`: Reset on client→LB packets only (default, best for request/response)
+            - `server`: Reset on LB→client packets only (rare)
+            - `both`: Reset on any packet (best for streaming: video, gaming, VoIP)
+        refresh_interval_sec:
+          type: integer
+          minimum: 1
+          description: |
+            Minimum interval between session timestamp updates (optimization).
+            For high-PPS streams, reduces BPF map writes by ~99%.
+            If not set, auto-calculated as min(1, timeout_sec/10).
+        shared_table_ref: { type: string, description: "Reference to shared persistence table" }
+        source_key: { type: string, enum: [src_ip, src_ip_port], description: "Key for source persistence" }
+        cookie_name: { type: string, default: "jnaccel", description: "Cookie name for cookie persistence" }
       additionalProperties: false
     Destination:
       type: object
@@ -1177,6 +1198,29 @@ components:
       properties:
         instance_id: { type: string }
         counters: { type: object }
+        protocol_stats:
+          type: object
+          description: Per-protocol statistics (TCP vs UDP)
+          properties:
+            tcp:
+              type: object
+              properties:
+                packets: { type: integer, description: "Total TCP packets processed" }
+                bytes: { type: integer, description: "Total TCP bytes processed" }
+                connections: { type: integer, description: "Total TCP connections" }
+            udp:
+              type: object
+              properties:
+                packets: { type: integer, description: "Total UDP packets processed" }
+                bytes: { type: integer, description: "Total UDP bytes processed" }
+                sessions: { type: integer, description: "Total UDP sessions" }
+        persistence_stats:
+          type: object
+          description: Session persistence refresh statistics
+          properties:
+            refresh_writes: { type: integer, description: "Number of session timestamp updates written" }
+            refresh_skipped: { type: integer, description: "Number of updates skipped (optimization)" }
+            write_reduction_pct: { type: number, description: "Percentage of writes saved by refresh_interval optimization" }
         services:
           type: array
           items: { $ref: "#/components/schemas/ServiceMetrics" }
